@@ -3,7 +3,10 @@ from mistralai import Mistral
 from dotenv import load_dotenv
 load_dotenv()
 
-client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY", ""))
+def get_client():
+    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    return Mistral(api_key=api_key)
+
 MODEL = "mistral-medium-latest"
 INTENT_PROMPT = """Classify this input as one of two categories:
 - SEARCH: a clinical query that requires knowledge base retrieval (PA request, drug criteria, guideline question, patient scenario)
