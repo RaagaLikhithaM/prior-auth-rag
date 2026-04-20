@@ -1,13 +1,14 @@
 import streamlit as st
 import requests
 import json
+import os
 
 st.set_page_config(
     page_title="Oncology Prior Authorization — NCCN Criteria RAG Agent",
     layout="wide"
 )
 
-API = "http://localhost:8000"
+API = os.environ.get("API_URL", "http://localhost:8000")
 
 st.title("Oncology Prior Authorization")
 st.caption(
