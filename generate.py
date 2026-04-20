@@ -87,10 +87,21 @@ def generate_pa_decision(patient_data: dict, context: str) -> dict:
         messages=[{"role": "user", "content": prompt}]
     )
     raw = resp.choices[0].message.content
+    print(f"\n=== MISTRAL RAW RESPONSE ===\n{raw}\n=== END ===\n")
+    
     clean = re.sub(r"```json|```", "", raw).strip()
+    
     try:
         return json.loads(clean)
-    except:
+    except Exception as e:
+        print(f"JSON PARSE ERROR: {e}")
+        try:
+            start = clean.find("{")
+            end = clean.rfind("}") + 1
+            if start >= 0 and end > start:
+                return json.loads(clean[start:end])
+        except Exception as e2:
+            print(f"SECOND PARSE ERROR: {e2}")
         return {
             "verdict": "CRITERIA NOT MET",
             "evidence_level": "N/A",

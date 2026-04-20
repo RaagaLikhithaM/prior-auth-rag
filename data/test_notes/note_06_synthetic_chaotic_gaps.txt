@@ -1,0 +1,26 @@
+ONCOLOGY NOTE
+Date: 04/14/2026
+
+Pt: 66M, lung adenocarcinoma, requesting pembrolizumab.
+
+Biomarkers: PD-L1 elevated, exact percentage not yet
+resulted from pathology. EGFR neg, ALK neg per recent
+NGS panel results.
+
+Performance: ECOG PS 1, ambulatory.
+
+Treatment request: Pembrolizumab 200mg Q3W, first-line.
+
+Plan: Await PD-L1 numeric result before finalizing PA.
+Will resubmit once complete.
+
+Note: No ICD-10 code documented in this note.
+Prior treatment history not addressed in this note -
+unclear if patient received any prior systemic therapy
+for this malignancy.
+
+Expected Layer 1 result: FAIL - 3 gaps identified:
+1. No ICD-10 code
+2. PD-L1 TPS numeric result not documented (pending)
+3. Prior treatment history not documented
+Expected Layer 2 result: BLOCKED - pipeline stops at Layer 1

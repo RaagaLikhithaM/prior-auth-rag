@@ -1,0 +1,46 @@
+CHIEF COMPLAINT:
+1. Extensive stage small cell lung cancer.
+2. Chemotherapy with carboplatin and etoposide.
+3. Left scapular pain status post CT scan of the thorax.
+
+HISTORY OF PRESENT ILLNESS: The patient is a 67-year-old
+female with extensive stage small cell lung cancer. She is
+currently receiving treatment with carboplatin and etoposide.
+She completed her fifth cycle on 08/12/10. She has had ongoing
+back pain and was sent for a CT scan of the thorax. She comes
+into clinic today accompanied by her daughters to review
+the results.
+
+CURRENT MEDICATIONS: Levothyroxine 88 mcg daily, Soriatane
+25 mg daily, Timoptic 0.5% solution b.i.d., Vicodin 5/500 mg
+one to two tablets q.6 hours p.r.n.
+
+ALLERGIES: No known drug allergies.
+
+REVIEW OF SYSTEMS: The patient continues to have back pain.
+She received platelet transfusion the other day and reported
+mild fever. She denies any chills, night sweats, chest pain,
+or shortness of breath.
+
+PHYSICAL EXAM:
+VITALS: BP: 118/60. HEART RATE: 76. TEMP: 97.8. Weight: 65.5 kg.
+GEN: She looks well, in no acute distress.
+LUNGS: Clear to auscultation bilaterally.
+CV: Regular rate; normal S1, S2, no murmurs.
+ABDOMEN: Soft. Positive bowel sounds.
+EXT: Lower extremities are without edema.
+
+IMAGING: CT scan shows a pleural base mass in the left apex
+with some growth along the medial margin. Left suprahilar and
+mediastinal adenopathy essentially stable. Multilevel thoracic
+bony metastatic disease present.
+
+ASSESSMENT/PLAN: 67-year-old female with extensive stage small
+cell lung cancer. Dose reduce carboplatin/etoposide by 10% due
+to low blood counts. Refer for palliative radiation to left
+back and scapular region.
+
+Source: MTSamples.com - de-identified medical transcription sample
+Expected Layer 1 result: FAIL - no ICD-10 code, no PD-L1 result,
+no EGFR/ALK testing, no ECOG score, wrong cancer type (SCLC not NSCLC)
+Expected Layer 2 result: BLOCKED - pipeline stops at Layer 1

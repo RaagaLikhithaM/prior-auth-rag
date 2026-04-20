@@ -1,0 +1,38 @@
+ONCOLOGY CONSULTATION NOTE
+Date: 04/14/2026
+Service: Thoracic Oncology
+
+REASON FOR CONSULTATION: Prior authorization request for
+pembrolizumab monotherapy, first-line NSCLC.
+
+DIAGNOSIS: Non-small cell lung cancer, squamous cell
+carcinoma, stage IVA. ICD-10: C34.12.
+
+MOLECULAR/BIOMARKER RESULTS:
+PD-L1 TPS: Testing sent to pathology on bronchoscopic
+biopsy specimen dated 04/10/2026. Results pending at
+time of this note.
+EGFR: Negative
+ALK: Negative by IHC
+ROS1: Negative by FISH
+
+PERFORMANCE STATUS:
+ECOG PS: 1 - restricted in strenuous activity,
+ambulatory and capable of light work.
+
+TREATMENT HISTORY:
+Treatment-naive. No prior systemic therapy for
+this malignancy.
+
+REQUESTED TREATMENT:
+Pembrolizumab (Keytruda) 200mg IV Q3W
+First-line monotherapy.
+
+ASSESSMENT:
+70-year-old male with stage IVA NSCLC squamous cell
+carcinoma. Awaiting PD-L1 numeric result before
+finalizing treatment plan. Requesting PA in anticipation
+of PD-L1 result.
+
+Expected Layer 1 result: FAIL - PD-L1 TPS result pending, no numeric value
+Expected Layer 2 result: BLOCKED - pipeline stops at Layer 1

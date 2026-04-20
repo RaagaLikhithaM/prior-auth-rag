@@ -1,0 +1,42 @@
+ONCOLOGY CONSULTATION NOTE
+Date: 04/14/2026
+Service: Thoracic Oncology
+
+REASON FOR CONSULTATION: Prior authorization request for
+pembrolizumab monotherapy, first-line NSCLC.
+
+DIAGNOSIS: Non-small cell lung cancer, adenocarcinoma,
+stage IVA. ICD-10: C34.31.
+
+MOLECULAR/BIOMARKER RESULTS:
+PD-L1 TPS: 55% (Dako 22C3 assay, 04/08/2026)
+EGFR: POSITIVE - exon 19 deletion confirmed on
+next-generation sequencing 04/08/2026
+ALK: Negative by IHC D5F3
+ROS1: Negative by FISH
+
+PERFORMANCE STATUS:
+ECOG PS: 0 - fully active, no restrictions.
+
+TREATMENT HISTORY:
+Treatment-naive. No prior systemic therapy.
+
+REQUESTED TREATMENT:
+Pembrolizumab (Keytruda) 200mg IV Q3W
+First-line monotherapy.
+
+ASSESSMENT:
+58-year-old female non-smoker with stage IVA NSCLC
+adenocarcinoma. PD-L1 55%. EGFR exon 19 deletion
+positive. Requesting pembrolizumab monotherapy
+first-line.
+
+Clinical note: EGFR mutation present. Per NCCN guidelines,
+EGFR-positive patients must receive osimertinib (Tagrisso)
+first-line, not pembrolizumab. This tests whether Layer 2
+correctly catches EGFR-positive patients who should not
+receive pembrolizumab monotherapy.
+
+Expected Layer 1 result: PASS - all 5 elements present
+Expected Layer 2 result: CRITERIA NOT MET - EGFR positive,
+osimertinib indicated per NCCN guidelines

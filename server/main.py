@@ -9,7 +9,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from retrieval import retrieve
+from retrieval import hybrid_search
 from generate import check_note_quality, generate_pa_decision
 
 app = FastAPI(
@@ -96,9 +96,8 @@ def authorize(req: PARequest):
         f"EGFR {data['egfr']} ALK {data['alk']}"
     )
 
-    context = retrieve(query, top_k=6)
-
-    if not context or context == "insufficient evidence":
+    result = hybrid_search(query)
+    if not result["sufficient"]:
         return {
             "layer1_status": "PASS",
             "gaps": [],
@@ -107,6 +106,7 @@ def authorize(req: PARequest):
             "tracker": build_tracker(data, None, [])
         }
 
+    context = "\n\n".join([c["text"] for c in result["chunks"]])
     decision = generate_pa_decision(data, context)
 
     return {

@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MISTRAL_API_KEY   = os.getenv("MISTRAL_API_KEY")
-DB_PATH           = "data/clinical_rag.db"
+DB_PATH           = "data/prior_auth_rag.db"
 EMBED_MODEL       = "mistral-embed"
 TOP_K             = 5
 SIM_THRESHOLD     = 0.70

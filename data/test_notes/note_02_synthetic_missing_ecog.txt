@@ -1,0 +1,31 @@
+ONCOLOGY CONSULTATION NOTE
+Date: 04/14/2026
+Service: Thoracic Oncology
+
+REASON FOR CONSULTATION: Prior authorization request for
+pembrolizumab monotherapy, first-line NSCLC.
+
+DIAGNOSIS: Non-small cell lung cancer, adenocarcinoma,
+stage IIIA. ICD-10: C34.12.
+
+MOLECULAR/BIOMARKER RESULTS:
+PD-L1 TPS: 72% (Dako 22C3 assay, 04/01/2026)
+EGFR: Negative (exon 19 del, exon 21 L858R)
+ALK: Negative by IHC D5F3
+ROS1: Negative by FISH
+
+TREATMENT HISTORY:
+Patient is treatment-naive. No prior systemic therapy,
+radiation, or surgery for this malignancy.
+
+REQUESTED TREATMENT:
+Pembrolizumab (Keytruda) 200mg IV Q3W
+First-line monotherapy per NCCN Category 1 recommendation.
+
+ASSESSMENT:
+55-year-old female with newly diagnosed stage IIIA NSCLC
+adenocarcinoma. PD-L1 expression 72%. No actionable driver
+mutations identified. Requesting pembrolizumab monotherapy.
+
+Expected Layer 1 result: FAIL - ECOG performance status not documented
+Expected Layer 2 result: BLOCKED - pipeline stops at Layer 1

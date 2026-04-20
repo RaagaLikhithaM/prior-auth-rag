@@ -20,7 +20,7 @@ load_dotenv()
 # ══ Constants ══════════════════════════════════════════════════════════════════
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-DB_PATH         = "data/clinical_rag.db"
+DB_PATH         = "data/prior_auth_rag.db"
 CHUNK_SIZE      = 512   # tokens — ~1-2 clinical paragraphs, enough context
 CHUNK_OVERLAP   = 50    # token overlap to avoid splitting mid-concept
 EMBED_MODEL     = "mistral-embed"
@@ -235,6 +235,35 @@ def ingest_pdf(pdf_path: str, source_name: str = None) -> dict:
         "pages":  len(pages),
         "chunks": len(all_chunks),
     }
+# ══ Entry Point ════════════════════════════════════════════════════════════════
 
+if __name__ == "__main__":
+    PDF_DIR = "data/pdfs"
+    pdf_files = [
+        f for f in os.listdir(PDF_DIR)
+        if f.endswith(".pdf")
+    ]
+
+    if not pdf_files:
+        print("No PDFs found in data/pdfs/")
+    else:
+        print(f"Found {len(pdf_files)} PDFs to ingest:")
+        for pdf_file in pdf_files:
+            print(f"  - {pdf_file}")
+
+        print("\nStarting ingestion...")
+        for pdf_file in pdf_files:
+            pdf_path = os.path.join(PDF_DIR, pdf_file)
+            print(f"\nIngesting: {pdf_file}")
+            result = ingest_pdf(pdf_path)
+            print(f"  Status: {result['status']}")
+            if result.get('chunks'):
+                print(f"  Pages:  {result.get('pages', 0)}")
+                print(f"  Chunks: {result['chunks']}")
+
+        print("\nIngestion complete.")
+        print(f"Database saved to: {DB_PATH}")
+
+    
 
 
