@@ -3,7 +3,102 @@ from mistralai import Mistral
 
 client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY", ""))
 MODEL = "mistral-medium-latest"
+INTENT_PROMPT = """Classify this input as one of two categories:
+- SEARCH: a clinical query that requires knowledge base retrieval (PA request, drug criteria, guideline question, patient scenario)
+- CHAT: conversational input that does not require retrieval (greetings, thanks, general chat)
 
+Input: {query}
+
+Respond with exactly one word: SEARCH or CHAT"""
+
+
+def detect_intent(query: str) -> str:
+    """
+    Classify query as SEARCH or CHAT.
+    CHAT queries skip knowledge base retrieval entirely.
+    Returns: 'SEARCH' or 'CHAT'
+    """
+    prompt = INTENT_PROMPT.format(query=query)
+    resp = client.chat.complete(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    result = resp.choices[0].message.content.strip().upper()
+    return "SEARCH" if "SEARCH" in result else "CHAT"
+QUERY_TRANSFORM_PROMPT = """You are a clinical search query optimizer for a prior authorization RAG system.
+
+Expand this query with relevant clinical synonyms, drug names, and standard terminology to improve retrieval from NCCN guidelines and payer policy documents.
+
+Original query: {query}
+
+Rules:
+- Add drug brand names and generic names (pembrolizumab = Keytruda)
+- Expand abbreviations (NSCLC = non-small cell lung cancer, PD-L1 = programmed death ligand 1)
+- Add relevant clinical terms (first-line = first-line therapy = 1L = treatment naive)
+- Keep it under 100 words
+- Return only the expanded query, no explanation
+
+Expanded query:"""
+
+
+def transform_query(query: str) -> str:
+    """
+    Expand clinical query with synonyms and standard terminology
+    to improve BM25 and semantic retrieval from guideline PDFs.
+    Returns expanded query string.
+    """
+    prompt = QUERY_TRANSFORM_PROMPT.format(query=query)
+    resp = client.chat.complete(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    expanded = resp.choices[0].message.content.strip()
+    print(f"Query transformed: {query[:50]}... → {expanded[:80]}...")
+    return expanded
+PII_DETECTION_PROMPT = """You are a HIPAA compliance checker. Scan this clinical text for Protected Health Information (PHI).
+
+Check for:
+- Patient full names (first + last)
+- Social Security Numbers (SSN)
+- Medical Record Numbers (MRN)
+- Dates of birth (full date — month/day/year)
+- Phone numbers
+- Street addresses
+- Email addresses
+- Health plan beneficiary numbers
+
+Text to scan:
+{text}
+
+Respond ONLY as JSON:
+{{
+  "contains_pii": true or false,
+  "pii_types_found": ["list of PII types found, empty if none"],
+  "safe_to_process": true or false
+}}"""
+
+
+def check_pii(text: str) -> dict:
+    """
+    Scan input text for HIPAA-defined Protected Health Information.
+    Returns dict with contains_pii, pii_types_found, safe_to_process.
+    If PII is detected, the pipeline should refuse to process.
+    """
+    prompt = PII_DETECTION_PROMPT.format(text=text[:2000])
+    resp = client.chat.complete(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    raw = resp.choices[0].message.content
+    clean = re.sub(r"```json|```", "", raw).strip()
+    try:
+        return json.loads(clean)
+    except Exception:
+        return {
+            "contains_pii": False,
+            "pii_types_found": [],
+            "safe_to_process": True
+        }
 NOTE_QUALITY_PROMPT = """You are a prior authorization specialist reviewing a clinical note.
 
 Check whether the note contains ALL of the following required elements:
@@ -87,8 +182,7 @@ def generate_pa_decision(patient_data: dict, context: str) -> dict:
         messages=[{"role": "user", "content": prompt}]
     )
     raw = resp.choices[0].message.content
-    print(f"\n=== MISTRAL RAW RESPONSE ===\n{raw}\n=== END ===\n")
-    
+        
     clean = re.sub(r"```json|```", "", raw).strip()
     
     try:

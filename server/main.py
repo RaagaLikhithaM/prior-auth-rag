@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from retrieval import hybrid_search
-from generate import check_note_quality, generate_pa_decision
+from generate import check_note_quality, generate_pa_decision,detect_intent,transform_query,check_pii
 
 app = FastAPI(
     title="Prior Authorization RAG API",
@@ -57,11 +57,58 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+@app.post("/ingest")
+async def ingest_files(files: list[UploadFile] = File(...)):
+    """
+    Upload one or more PDF files for ingestion into the knowledge base.
+    Files are saved to data/pdfs/ and ingested immediately.
+    """
+    import shutil
+    from ingest import ingest_pdf
 
+    os.makedirs("data/pdfs", exist_ok=True)
+    results = []
+
+    for file in files:
+        if not file.filename.endswith(".pdf"):
+            results.append({
+                "filename": file.filename,
+                "status": "rejected",
+                "reason": "only PDF files are accepted"
+            })
+            continue
+
+        dest = os.path.join("data/pdfs", file.filename)
+        with open(dest, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+        result = ingest_pdf(dest)
+        results.append({
+            "filename": file.filename,
+            "status": result["status"],
+            "pages": result.get("pages", 0),
+            "chunks": result.get("chunks", 0)
+        })
+
+    return {"ingested": results}
 
 @app.post("/authorize")
 def authorize(req: PARequest):
     data = req.dict()
+    pii_check = check_pii(data.get("note", "") + " " + data.get("dx", ""))
+    if pii_check.get("contains_pii") and not pii_check.get("safe_to_process"):
+        return {
+            "layer1_status": "REJECTED",
+            "gaps": [],
+            "layer2_status": "BLOCKED",
+            "verdict": None,
+            "message": (
+                f"Submission rejected: Protected Health Information (PHI) detected. "
+                f"Found: {', '.join(pii_check.get('pii_types_found', []))}. "
+                f"Please de-identify the clinical note before submission per HIPAA Safe Harbor guidelines."
+            ),
+            "tracker": build_tracker(data, None, ["PHI detected in submission"])
+        }
 
     note_text = data.get("note", "").strip()
     if not note_text:
@@ -77,7 +124,6 @@ def authorize(req: PARequest):
             "prior_treatment": data["prior"],
             "agent": data["agent"]
         })
-
     quality = check_note_quality(note_text)
 
     if not quality.get("complete", True):
@@ -95,7 +141,18 @@ def authorize(req: PARequest):
         f"PD-L1 {data['pdl1']}% {data['line']} "
         f"EGFR {data['egfr']} ALK {data['alk']}"
     )
+    intent = detect_intent(query)
+    if intent == "CHAT":
+        return {
+            "layer1_status": "PASS",
+            "gaps": [],
+            "layer2_status": "CHAT",
+            "verdict": None,
+            "message": "This appears to be a conversational query. Please submit a clinical PA request.",
+            "tracker": build_tracker(data, None, [])
+        }
 
+    query = transform_query(query)
     result = hybrid_search(query)
     if not result["sufficient"]:
         return {
