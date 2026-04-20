@@ -6,7 +6,6 @@ load_dotenv()
 def get_client():
     api_key = os.environ.get("MISTRAL_API_KEY", "")
     return Mistral(api_key=api_key)
-client = get_client()
 
 MODEL = "mistral-medium-latest"
 INTENT_PROMPT = """Classify this input as one of two categories:
@@ -25,7 +24,7 @@ def detect_intent(query: str) -> str:
     Returns: 'SEARCH' or 'CHAT'
     """
     prompt = INTENT_PROMPT.format(query=query)
-    resp = client.chat.complete(
+    resp = get_client().chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -54,7 +53,7 @@ def transform_query(query: str) -> str:
     Returns expanded query string.
     """
     prompt = QUERY_TRANSFORM_PROMPT.format(query=query)
-    resp = client.chat.complete(
+    resp = get_client().chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -91,7 +90,7 @@ def check_pii(text: str) -> dict:
     If PII is detected, the pipeline should refuse to process.
     """
     prompt = PII_DETECTION_PROMPT.format(text=text[:2000])
-    resp = client.chat.complete(
+    resp = get_client().chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -167,7 +166,7 @@ If criteria not met, use verdict: "CRITERIA NOT MET" and appeal_recommended: tru
 
 def check_note_quality(note: str) -> dict:
     prompt = NOTE_QUALITY_PROMPT.format(note=note)
-    resp = client.chat.complete(
+    resp = get_client().chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -184,7 +183,7 @@ def generate_pa_decision(patient_data: dict, context: str) -> dict:
         patient_json=json.dumps(patient_data, indent=2),
         context=context
     )
-    resp = client.chat.complete(
+    resp = get_client().chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
