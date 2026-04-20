@@ -242,3 +242,75 @@ across four locations: local `.env`, Railway environment variables,
 Streamlit Cloud secrets, and a second project using the same key.
 The incident highlighted why `.gitignore` must be set up correctly
 before the first commit.
+
+
+## Current deployment — actual infrastructure
+
+### Hugging Face Spaces (live, free, permanent)
+
+| Component | Service | Cost |
+|---|---|---|
+| FastAPI backend | HF Spaces Docker container | $0 |
+| Streamlit frontend | Same Docker container | $0 |
+| Database | Container filesystem (SQLite) | $0 |
+| PDF storage | Container filesystem | $0 |
+| LLM API | Mistral AI (pay per use) | ~$0.023/request |
+| **Total infrastructure** | | **$0/month** |
+
+**URL:** https://huggingface.co/spaces/RaagaLikhitha/prior-auth-rag
+
+HF Spaces CPU Basic tier: 2 vCPU, 16GB RAM, no sleep, no credit card
+required, permanent URL. Both FastAPI (port 8000) and Streamlit (port 7860)
+run in the same Docker container. HF Spaces exposes port 7860 publicly.
+
+**One limitation:** The container filesystem is not a true persistent disk —
+it persists across restarts but resets if the Space is rebuilt from scratch
+(e.g. after a new code push). On rebuild, `start.sh` re-downloads the Cigna
+PDF and re-runs ingest (~30 seconds). The database is rebuilt automatically
+with no manual intervention.
+
+**Why not Railway or Render for this deployment:**
+
+Railway free tier has an ephemeral filesystem — the database resets on every
+restart, requiring manual re-ingestion. Render's free tier sleeps after 15
+minutes of inactivity, causing 30-60 second cold start delays. HF Spaces
+has neither limitation on the CPU Basic free tier.
+
+### API key management on HF Spaces
+
+The Mistral API key is stored as a repository secret in HF Spaces Settings
+→ Variables and secrets. It is injected as an environment variable at
+container runtime. It is never committed to the repository.
+
+The `get_client()` pattern in `generate.py` reads the key at function
+call time rather than module import time:
+
+```python
+def get_client():
+    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    return Mistral(api_key=api_key)
+```
+
+This is required because HF Spaces injects secrets after the Python module
+is imported. A global `client = Mistral(api_key=os.environ.get(...))` at
+module level initialises with an empty string, producing
+`Illegal header value b'Bearer '` on every API call.
+
+### Git history cleanup
+
+During deployment, three issues required git history rewriting:
+
+**PDF files in history:** The NCCN, FDA label, and Cigna PDFs were
+accidentally committed to git history. `git filter-branch` removed them
+from all 12 commits. HF Spaces rejects files over 10MB and binary files
+without Git LFS.
+
+**Database in history:** `prior_auth_rag.db` was committed and then removed.
+HF Spaces rejects binary files regardless of size without Xet storage.
+The database is now built at container startup via `start.sh` instead of
+being committed to the repository.
+
+**API key exposure:** The Mistral API key was accidentally committed in
+`.env` on the initial push. The key was immediately revoked and rotated.
+`git rm --cached .env` removed it from tracking. The incident established
+the correct pattern: `.env` in `.gitignore` before the first commit.

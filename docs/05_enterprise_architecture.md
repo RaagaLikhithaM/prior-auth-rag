@@ -320,3 +320,45 @@ None of these gaps affect the correctness of the pipeline for demo
 purposes. All five must be addressed before any deployment handling
 real patient data. The architecture supports all five fixes without
 changing the core Layer 1 / Layer 2 logic.
+
+
+## Current deployment — Hugging Face Spaces
+
+The system is currently deployed on Hugging Face Spaces (Docker SDK),
+CPU Basic tier. This is the live portfolio deployment.
+
+**URL:** https://huggingface.co/spaces/RaagaLikhitha/prior-auth-rag
+
+**Why HF Spaces over Railway or Render:**
+
+| Property | HF Spaces | Railway | Render |
+|---|---|---|---|
+| Cost | Free forever | $5/month after trial | Free tier available |
+| Sleeps when idle | No | No | Yes (15 min) |
+| Binary file support | Via Git LFS / Xet | Yes | Yes |
+| Custom Docker | Yes | Yes | Yes |
+| HTTPS | Yes (automatic) | Yes | Yes |
+| Persistent storage | Container filesystem | Ephemeral on free | Persistent disk ($7/mo) |
+
+HF Spaces CPU Basic provides 2 vCPU and 16GB RAM — sufficient for the
+1,230-chunk SQLite database and 5 concurrent Mistral API calls. The
+container filesystem persists across restarts, so the database built
+on first boot survives container restarts without re-ingestion.
+
+**Startup sequence on HF Spaces:**
+
+`start.sh` is the Docker entrypoint. On container start:
+
+1. Creates `data/pdfs/` directory if it does not exist
+2. Checks if `data/prior_auth_rag.db` exists — skips ingest if it does
+3. Downloads Cigna Drug Coverage Policy 1403 PDF from public URL
+4. Runs `python ingest.py` — builds SQLite database (91 chunks, ~30 seconds)
+5. Starts `uvicorn server.main:app --host 0.0.0.0 --port 8000`
+6. Waits 5 seconds for FastAPI to be ready
+7. Starts `streamlit run frontend/app.py --server.port 7860`
+
+**The five production gaps still apply** — HIPAA BAA, FHIR integration,
+pgvector, audit trail, authentication — none of these are addressed by
+the HF Spaces deployment. HF Spaces is a portfolio demonstration, not
+a HIPAA-compliant production deployment. The architecture supports all
+five production upgrades without changing the core pipeline logic.

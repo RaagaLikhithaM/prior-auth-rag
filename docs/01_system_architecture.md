@@ -282,3 +282,41 @@ sequenceDiagram
     S->>S: build_tracker(data, decision, gaps)
     S->>U: {layer1_status, layer2_status, verdict, tracker}
 ```
+## Current deployment architecture
+
+```mermaid
+graph TD
+    A[User browser] -->|HTTPS port 7860| B[HF Spaces container]
+    B --> C[Streamlit frontend\nlocalhost:7860]
+    B --> D[FastAPI backend\nlocalhost:8000]
+    C -->|HTTP localhost:8000| D
+    D --> E[SQLite database\ndata/prior_auth_rag.db]
+    D --> F[Mistral AI API\napi.mistral.ai]
+    G[start.sh on container boot] -->|downloads Cigna PDF| H[data/pdfs/]
+    G -->|python ingest.py| E
+```
+
+Both services run inside the same Docker container on HF Spaces CPU Basic
+(2 vCPU, 16GB RAM). `start.sh` is the entrypoint — it downloads the Cigna
+oncology policy PDF on first boot, runs `ingest.py` to build the SQLite
+database, starts FastAPI on port 8000, waits 5 seconds, then starts
+Streamlit on port 7860. HF Spaces exposes only port 7860 publicly.
+Streamlit calls FastAPI via `localhost:8000` internally.
+
+**Why `get_client()` instead of a global `client` variable:**
+
+```python
+def get_client():
+    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    return Mistral(api_key=api_key)
+```
+
+On HF Spaces, environment variables from secrets are injected at container
+runtime, not at module import time. A global `client = Mistral(api_key=...)`
+at the top of `generate.py` initialises with an empty key — every API call
+fails with `Illegal header value b'Bearer '`. Calling `get_client()` inside
+each function reads the key at the moment the function executes, when the
+environment is fully loaded. This is the correct pattern for any cloud
+deployment where secrets are injected at runtime rather than build time.
+
+**Live demo:** https://huggingface.co/spaces/RaagaLikhitha/prior-auth-rag
