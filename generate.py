@@ -1,5 +1,7 @@
 import os, json, re
 from mistralai import Mistral
+from dotenv import load_dotenv
+load_dotenv()
 
 client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY", ""))
 MODEL = "mistral-medium-latest"
@@ -91,6 +93,7 @@ def check_pii(text: str) -> dict:
     )
     raw = resp.choices[0].message.content
     clean = re.sub(r"```json|```", "", raw).strip()
+    print(f"PII CHECK RESULT: {clean}")
     try:
         return json.loads(clean)
     except Exception:

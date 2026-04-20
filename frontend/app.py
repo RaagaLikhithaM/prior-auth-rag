@@ -190,6 +190,10 @@ if submitted:
 
     st.divider()
     st.subheader("Layer 1 — Note quality gate")
+    if l1 == "REJECTED":
+        st.error("REJECTED — Protected Health Information detected")
+        st.write(result.get("message", ""))
+        st.stop()
 
     if l1 == "INCOMPLETE":
         st.error("INCOMPLETE — pipeline halted")

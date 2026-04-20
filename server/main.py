@@ -96,7 +96,8 @@ async def ingest_files(files: list[UploadFile] = File(...)):
 def authorize(req: PARequest):
     data = req.dict()
     pii_check = check_pii(data.get("note", "") + " " + data.get("dx", ""))
-    if pii_check.get("contains_pii") and not pii_check.get("safe_to_process"):
+    print(f"PII RESULT: {pii_check}")
+    if pii_check.get("contains_pii"):
         return {
             "layer1_status": "REJECTED",
             "gaps": [],
