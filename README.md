@@ -6,6 +6,9 @@ colorTo: green
 sdk: docker
 pinned: false
 ---
+
+**Live demo:** https://huggingface.co/spaces/RaagaLikhitha/prior-auth-rag
+
 # prior-auth-rag
 
 **Oncology Prior Authorization RAG Pipeline**
