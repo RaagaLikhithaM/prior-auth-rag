@@ -6,6 +6,7 @@ load_dotenv()
 def get_client():
     api_key = os.environ.get("MISTRAL_API_KEY", "")
     return Mistral(api_key=api_key)
+client = get_client()
 
 MODEL = "mistral-medium-latest"
 INTENT_PROMPT = """Classify this input as one of two categories:
