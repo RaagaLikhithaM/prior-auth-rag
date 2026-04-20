@@ -1,3 +1,11 @@
+---
+title: Prior Auth RAG
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 # prior-auth-rag
 
 **Oncology Prior Authorization RAG Pipeline**
@@ -419,3 +427,4 @@ Full technical and clinical documentation in `docs/`:
 | `06_failure_modes_and_scaling.md` | Failure taxonomy, production fixes, scaling path |
 | `07_clinical_domain.md` | NSCLC, pembrolizumab, KEYNOTE-024, NCCN categories, ICD-10 |
 | `08_cost_and_infrastructure.md` | Cost per request, scale projections, API key management |
+
