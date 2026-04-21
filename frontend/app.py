@@ -147,7 +147,6 @@ with st.form("pa_form"):
         "Run prior authorization pipeline",
         use_container_width=True
     )
-
 if submitted:
     ecog_num = ecog.split("—")[0].strip()
     line_code = line.split("—")[0].strip()
@@ -164,6 +163,7 @@ if submitted:
         egfr=egfr,
         alk=alk,
         ros1=ros1,
+        kras=kras,
         agent=agent,
         line=line_code,
         regimen=regimen,
@@ -176,7 +176,7 @@ if submitted:
             r = requests.post(
                 f"{API}/authorize",
                 json=payload,
-                timeout=60
+                timeout=120
             )
             result = r.json()
         except Exception as e:
@@ -220,6 +220,10 @@ if submitted:
     l2 = result.get("layer2_status", "")
     verdict = result.get("verdict", {})
 
+    if l2 == "CHAT":
+        st.info("Conversational query detected — no PA evaluation performed.")
+        st.stop()
+
     if l2 == "APPROVED":
         st.success(
             f"APPROVED — {verdict.get('evidence_level', 'NCCN Category 1')}"
@@ -246,9 +250,19 @@ if submitted:
             )
             st.divider()
 
+        risk = verdict.get("hallucination_risk", "LOW")
+        unsupported = verdict.get("unsupported_criteria", [])
+        if risk != "LOW" or unsupported:
+            st.warning(f"Hallucination risk: {risk}")
+            if unsupported:
+                st.write("Criteria with low context support:")
+                for u in unsupported:
+                    st.write(f"- {u}")
+
     st.subheader("PA decision tracker")
     st.caption(
         "Structured JSON output — mirrors StackAI "
         "Generate Tracker Entry agent"
     )
     st.json(result.get("tracker", {}))
+

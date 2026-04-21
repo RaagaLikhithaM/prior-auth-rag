@@ -17,9 +17,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+
 # ══ Constants ══════════════════════════════════════════════════════════════════
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+client = Mistral(api_key=MISTRAL_API_KEY)
 DB_PATH         = "data/prior_auth_rag.db"
 CHUNK_SIZE      = 512   # tokens — ~1-2 clinical paragraphs, enough context
 CHUNK_OVERLAP   = 50    # token overlap to avoid splitting mid-concept
@@ -142,7 +145,6 @@ def embed_chunks(texts: list[str]) -> list[np.ndarray]:
     Returns:
         List of numpy float32 embedding vectors.
     """
-    client   = Mistral(api_key=MISTRAL_API_KEY)
     vectors  = []
     batch_sz = 16  # reduced from 32 to stay under rate limits
 

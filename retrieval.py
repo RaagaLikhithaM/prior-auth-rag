@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MISTRAL_API_KEY   = os.getenv("MISTRAL_API_KEY")
+client = Mistral(api_key=MISTRAL_API_KEY)
 DB_PATH           = "data/prior_auth_rag.db"
 EMBED_MODEL       = "mistral-embed"
 TOP_K             = 5
@@ -42,10 +43,13 @@ def load_all_chunks() -> list[dict]:
     We load all chunks into memory for search because the dataset is
     small enough (a few hundred chunks per PDF). For larger corpora
     an approximate nearest neighbour index would be more appropriate.
-
+ 
     Returns:
         List of dicts with keys: id, source, page, chunk_idx, text,
         embedding (as float32 numpy array).
+
+        # In-memory scan is fine for ~1000-2000 chunks.
+        # At scale, replace with an ANN index (e.g. HNSW).
     """
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
@@ -78,7 +82,6 @@ def embed_query(query: str) -> np.ndarray:
     Returns:
         Float32 numpy array of the query embedding.
     """
-    client   = Mistral(api_key=MISTRAL_API_KEY)
     response = client.embeddings.create(model=EMBED_MODEL, inputs=[query])
     return np.array(response.data[0].embedding, dtype=np.float32)
 

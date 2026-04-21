@@ -8,3 +8,4 @@ data/pdfs/
 *.pkl
 *.npy
 .streamlit/
+.venv/

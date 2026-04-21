@@ -4,13 +4,16 @@ from pydantic import BaseModel
 from typing import Optional
 import json
 import datetime
+import hashlib
+import shutil
 import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from retrieval import hybrid_search
-from generate import check_note_quality, generate_pa_decision,detect_intent,transform_query,check_pii
+from generate import check_note_quality, generate_pa_decision, detect_intent, transform_query, check_pii
+from ingest import ingest_pdf
 
 app = FastAPI(
     title="Prior Authorization RAG API",
@@ -38,6 +41,7 @@ class PARequest(BaseModel):
     egfr: str
     alk: str
     ros1: str
+    kras: Optional[str] = "Not tested"
     agent: str
     line: str
     regimen: str
@@ -63,9 +67,6 @@ async def ingest_files(files: list[UploadFile] = File(...)):
     Upload one or more PDF files for ingestion into the knowledge base.
     Files are saved to data/pdfs/ and ingested immediately.
     """
-    import shutil
-    from ingest import ingest_pdf
-
     os.makedirs("data/pdfs", exist_ok=True)
     results = []
 
@@ -82,16 +83,22 @@ async def ingest_files(files: list[UploadFile] = File(...)):
         with open(dest, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        result = ingest_pdf(dest)
-        results.append({
-            "filename": file.filename,
-            "status": result["status"],
-            "pages": result.get("pages", 0),
-            "chunks": result.get("chunks", 0)
-        })
+        try:
+            result = ingest_pdf(dest)
+            results.append({
+                "filename": file.filename,
+                "status": result["status"],
+                "pages": result.get("pages", 0),
+                "chunks": result.get("chunks", 0)
+            })
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "status": "error",
+                "reason": str(e)
+            })
 
     return {"ingested": results}
-
 @app.post("/authorize")
 def authorize(req: PARequest):
     data = req.dict()
@@ -179,7 +186,7 @@ def authorize(req: PARequest):
 
 def build_tracker(data: dict, decision: dict, gaps: list) -> dict:
     return {
-        "patient_id": f"PA-{abs(hash(data['icd'] + data['agent'])) % 90000 + 10000}",
+        "patient_id": f"PA-{int(hashlib.md5((data['icd'] + data['agent']).encode()).hexdigest(), 16) % 90000 + 10000}",
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "agent": data["agent"],
         "icd10": data["icd"],

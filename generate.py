@@ -1,13 +1,14 @@
-import os, json, re
+import os
+import json
+import re
 from mistralai import Mistral
 from dotenv import load_dotenv
+
 load_dotenv()
 
-def get_client():
-    api_key = os.environ.get("MISTRAL_API_KEY", "")
-    return Mistral(api_key=api_key)
-
+client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY", ""))
 MODEL = "mistral-medium-latest"
+
 INTENT_PROMPT = """Classify this input as one of two categories:
 - SEARCH: a clinical query that requires knowledge base retrieval (PA request, drug criteria, guideline question, patient scenario)
 - CHAT: conversational input that does not require retrieval (greetings, thanks, general chat)
@@ -17,6 +18,8 @@ Input: {query}
 Respond with exactly one word: SEARCH or CHAT"""
 
 
+## Intent verification
+
 def detect_intent(query: str) -> str:
     """
     Classify query as SEARCH or CHAT.
@@ -24,7 +27,7 @@ def detect_intent(query: str) -> str:
     Returns: 'SEARCH' or 'CHAT'
     """
     prompt = INTENT_PROMPT.format(query=query)
-    resp = get_client().chat.complete(
+    resp = client.chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -53,7 +56,7 @@ def transform_query(query: str) -> str:
     Returns expanded query string.
     """
     prompt = QUERY_TRANSFORM_PROMPT.format(query=query)
-    resp = get_client().chat.complete(
+    resp = client.chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -82,7 +85,7 @@ Respond ONLY as JSON:
   "safe_to_process": true or false
 }}"""
 
-
+##PII
 def check_pii(text: str) -> dict:
     """
     Scan input text for HIPAA-defined Protected Health Information.
@@ -90,7 +93,7 @@ def check_pii(text: str) -> dict:
     If PII is detected, the pipeline should refuse to process.
     """
     prompt = PII_DETECTION_PROMPT.format(text=text[:2000])
-    resp = get_client().chat.complete(
+    resp = client.chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -163,10 +166,10 @@ Respond ONLY as JSON with no other text:
 
 If criteria not met, use verdict: "CRITERIA NOT MET" and appeal_recommended: true."""
 
-
+##Note Quality check
 def check_note_quality(note: str) -> dict:
     prompt = NOTE_QUALITY_PROMPT.format(note=note)
-    resp = get_client().chat.complete(
+    resp = client.chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -176,14 +179,61 @@ def check_note_quality(note: str) -> dict:
         return json.loads(clean)
     except:
         return {"complete": False, "gaps": ["Could not parse note"], "summary": ""}
+##Hallucination Filter
+def check_evidence(decision: dict, context: str) -> dict:
+    """Post-hoc evidence check — scans each criterion's rationale
+    against the retrieved context to flag unsupported claims.
 
+    For each criterion in the checklist, checks whether key terms
+    from the rationale appear in the retrieved context. If no overlap
+    is found, the criterion is flagged as unsupported.
 
+    Args:
+        decision: parsed PA decision dict from generate_pa_decision().
+        context:  raw retrieved context string passed to the LLM.
+
+    Returns:
+        The same decision dict with two fields added:
+            hallucination_risk: 'LOW' | 'MEDIUM' | 'HIGH'
+            unsupported_criteria: list of criterion names with no
+                                  evidence found in context.
+    """
+    context_lower = context.lower()
+    unsupported = []
+
+    for item in decision.get("criteria_checklist", []):
+        rationale = item.get("rationale", "")
+        # tokenize rationale into meaningful words (ignore short words)
+        words = [w.lower() for w in rationale.split() if len(w) > 4]
+        if not words:
+            continue
+        # check if at least 30% of rationale words appear in context
+        matches = sum(1 for w in words if w in context_lower)
+        overlap = matches / len(words)
+        if overlap < 0.30:
+            unsupported.append(item.get("criterion", "unknown"))
+
+    total = len(decision.get("criteria_checklist", []))
+    if total == 0:
+        risk = "LOW"
+    elif len(unsupported) / total > 0.5:
+        risk = "HIGH"
+    elif len(unsupported) > 0:
+        risk = "MEDIUM"
+    else:
+        risk = "LOW"
+
+    decision["hallucination_risk"] = risk
+    decision["unsupported_criteria"] = unsupported
+    return decision
+
+##Generate PA decision
 def generate_pa_decision(patient_data: dict, context: str) -> dict:
     prompt = PA_DECISION_PROMPT.format(
         patient_json=json.dumps(patient_data, indent=2),
         context=context
     )
-    resp = get_client().chat.complete(
+    resp = client.chat.complete(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -192,14 +242,15 @@ def generate_pa_decision(patient_data: dict, context: str) -> dict:
     clean = re.sub(r"```json|```", "", raw).strip()
     
     try:
-        return json.loads(clean)
+        result = json.loads(clean)
+        return check_evidence(result, context)        # ← was: return json.loads(clean)
     except Exception as e:
         print(f"JSON PARSE ERROR: {e}")
         try:
             start = clean.find("{")
             end = clean.rfind("}") + 1
             if start >= 0 and end > start:
-                return json.loads(clean[start:end])
+                return check_evidence(json.loads(clean[start:end]), context)  # ← add here too
         except Exception as e2:
             print(f"SECOND PARSE ERROR: {e2}")
         return {
@@ -207,5 +258,7 @@ def generate_pa_decision(patient_data: dict, context: str) -> dict:
             "evidence_level": "N/A",
             "criteria_checklist": [],
             "overall_rationale": "Could not parse decision",
-            "appeal_recommended": True
+            "appeal_recommended": True,
+            "hallucination_risk": "HIGH",             # ← add to fallback
+            "unsupported_criteria": []
         }

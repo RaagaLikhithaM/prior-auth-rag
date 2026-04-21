@@ -124,8 +124,7 @@ prior-auth-rag/
 ├── ingest.py         ← PDF extraction, chunking, embedding, SQLite storage
 ├── retrieval.py      ← BM25 + cosine similarity + RRF + threshold check
 ├── generate.py       ← PII check, intent, query transform, Layer 1, Layer 2
-├── pipeline.py       ← pipeline orchestration utilities
-└── requirements.txt
+└── requirements.tx
 ```
 
 ---
@@ -176,9 +175,9 @@ Response:
 ```
 
 ### POST /authorize
-Submit a PA request. Full field list: `age`, `sex`, `ecog`, `dx`,
-`icd`, `stage`, `hist`, `pdl1`, `egfr`, `alk`, `ros1`, `agent`,
-`line`, `regimen`, `prior`, `note`.
+Submit a PA request. 
+Full field list: `age`, `sex`, `ecog`, `dx`, `icd`, `stage`, `hist`, 
+`pdl1`, `egfr`, `alk`, `ros1`, `kras`, `agent`, `line`, `regimen`, `prior`, `note`.
 
 **Response — Layer 1 incomplete:**
 ```json
@@ -200,6 +199,8 @@ Submit a PA request. Full field list: `age`, `sex`, `ecog`, `dx`,
 }
 ```
 
+
+
 **Response — approved:**
 ```json
 {
@@ -208,6 +209,8 @@ Submit a PA request. Full field list: `age`, `sex`, `ecog`, `dx`,
   "verdict": {
     "verdict": "APPROVED",
     "evidence_level": "Category 1 (Preferred)",
+    "hallucination_risk": "LOW",
+    "unsupported_criteria": [],
     "criteria_checklist": [
       {
         "criterion": "PD-L1 TPS >= 50% (Dako 22C3 assay)",
@@ -222,7 +225,6 @@ Submit a PA request. Full field list: `age`, `sex`, `ecog`, `dx`,
   "tracker": { "patient_id": "PA-47136", "layer2_verdict": "APPROVED", ... }
 }
 ```
-
 ---
 
 ## How to run
