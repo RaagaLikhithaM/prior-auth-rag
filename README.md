@@ -75,7 +75,21 @@ and KEYNOTE-024 trial data on every criterion.
 
 ---
 
-## Pipeline flow
+## System architecture
+
+### Patient journey — plain English
+
+```mermaid
+flowchart LR
+    A[Patient record] --> B[Gap identification\n+ outreach]
+    B --> C[Care manager acts\nRx ordered]
+    C --> D[Clinical eligibility\nevaluation]
+    D --> E[APPROVED\nor CRITERIA NOT MET]
+```
+
+---
+
+### Two-layer pipeline
 
 ```mermaid
 flowchart TD
@@ -96,6 +110,28 @@ flowchart TD
 ```
 
 ---
+
+### Multi-agent architecture
+
+```mermaid
+flowchart TD
+    UI[User Interface\nForm · Chat · API · Batch]
+    UI --> ORC[Orchestrator\nroutes by intent · manages state\nPII check · query transformation]
+
+    ORC --> NQ[Note Quality Gate\nLayer 1 — 5 PA elements]
+    ORC --> RA[Retrieval Agent\nBM25 + cosine + RRF\nthreshold 0.70]
+    ORC --> GEN[Generation Agent\nLLM evaluation\nhallucination check]
+
+    NQ --> ASM[Response Assembler\nverdict · citations · tracker JSON]
+    RA --> ASM
+    GEN --> ASM
+
+    ASM --> ANS[Final answer displayed to user]
+```
+
+> Full technical architecture — sequence diagrams, component responsibilities,
+> deployment architecture — in [`docs/01_system_architecture.md`](docs/01_system_architecture.md)
+
 
 ## Project structure
 
