@@ -104,9 +104,9 @@ def check_pii(text: str) -> dict:
         return json.loads(clean)
     except Exception:
         return {
-            "contains_pii": False,
-            "pii_types_found": [],
-            "safe_to_process": True
+            "contains_pii": True,
+            "pii_types_found": ["parse_error"],
+            "safe_to_process": False
         }
 NOTE_QUALITY_PROMPT = """You are a prior authorization specialist reviewing a clinical note.
 
@@ -204,7 +204,7 @@ def check_evidence(decision: dict, context: str) -> dict:
     for item in decision.get("criteria_checklist", []):
         rationale = item.get("rationale", "")
         # tokenize rationale into meaningful words (ignore short words)
-        words = [w.lower() for w in rationale.split() if len(w) > 4]
+        words = [w.lower() for w in rationale.split() if len(w) > 3]
         if not words:
             continue
         # check if at least 30% of rationale words appear in context
