@@ -8,6 +8,8 @@ import hashlib
 import shutil
 import sys
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -20,7 +22,9 @@ app = FastAPI(
     description="Oncology PA pipeline — NCCN criteria retrieval for pembrolizumab",
     version="1.0.0"
 )
-
+# NOTE: CORS open for HuggingFace Spaces demo deployment.
+# Production: restrict allow_origins to frontend domain,
+# add API key authentication before this middleware.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -103,7 +107,7 @@ async def ingest_files(files: list[UploadFile] = File(...)):
 def authorize(req: PARequest):
     data = req.dict()
     pii_check = check_pii(data.get("note", "") + " " + data.get("dx", ""))
-    print(f"PII RESULT: {pii_check}")
+    logger.debug("PII check result: %s", pii_check.get("contains_pii"))
     if pii_check.get("contains_pii"):
         return {
             "layer1_status": "REJECTED",
@@ -186,7 +190,7 @@ def authorize(req: PARequest):
 
 def build_tracker(data: dict, decision: dict, gaps: list) -> dict:
     return {
-        "patient_id": f"PA-{int(hashlib.md5((data['icd'] + data['agent']).encode()).hexdigest(), 16) % 90000 + 10000}",
+        "patient_id": f"PA-{int(hashlib.sha256((data['icd'] + data['agent']).encode()).hexdigest(), 16) % 90000 + 10000}",    
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "agent": data["agent"],
         "icd10": data["icd"],

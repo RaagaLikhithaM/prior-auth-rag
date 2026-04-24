@@ -12,11 +12,13 @@ import json
 import pdfplumber
 import tiktoken
 import numpy as np
+import logging
 from mistralai import Mistral
 from dotenv import load_dotenv
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 
 
 # ══ Constants ══════════════════════════════════════════════════════════════════
@@ -147,12 +149,11 @@ def embed_chunks(texts: list[str]) -> list[np.ndarray]:
     """
     vectors  = []
     batch_sz = 16  # reduced from 32 to stay under rate limits
-
     for i in range(0, len(texts), batch_sz):
-        batch = texts[i : i + batch_sz]
-
-        # exponential backoff — retry up to 5 times on 429
+        batch       = texts[i : i + batch_sz]
+         #exponential backoff — retry up to 5 times on 429
         max_retries = 5
+
         for attempt in range(max_retries):
             try:
                 response = client.embeddings.create(
@@ -161,19 +162,22 @@ def embed_chunks(texts: list[str]) -> list[np.ndarray]:
                 )
                 for item in response.data:
                     vectors.append(np.array(item.embedding, dtype=np.float32))
-                # delay between batches to stay under rate limit
+                 #delay between batches to stay under rate limit
                 time.sleep(1.5)
                 break  # success — exit retry loop
 
             except Exception as e:
                 if "429" in str(e) or "rate" in str(e).lower():
-                    wait = (2 ** attempt) + 1  # 2, 3, 5, 9, 17 seconds
-                    print(f"Rate limit hit, waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                    wait = (2 ** attempt) + 1
+                    logger.warning(
+                        "Rate limit hit, waiting %ss (attempt %d/%d)",
+                        wait, attempt + 1, max_retries
+                    )
                     time.sleep(wait)
                     if attempt == max_retries - 1:
                         raise
                 else:
-                    raise  # non-rate-limit error — raise immediately
+                    raise   #non-rate-limit error — raise immediately
 
     return vectors
 
