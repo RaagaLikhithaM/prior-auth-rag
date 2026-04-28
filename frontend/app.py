@@ -8,7 +8,7 @@ st.set_page_config(
     layout="wide"
 )
 
-API = os.environ.get("API_URL", "http://localhost:8000")
+API = os.environ.get("API_URL", "http://127.0.0.1:8000")
 
 st.title("Oncology Prior Authorization")
 st.caption(
