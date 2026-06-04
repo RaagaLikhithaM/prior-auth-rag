@@ -442,11 +442,9 @@ clinical NLP research. Notes 01, 02, 03, 05, 06 are synthetic.
 
 ---
 
-## Mirrors StackAI PA template
+This pipeline extracts  the Prior Authorization details using an RCM template 
 
-This pipeline mirrors the StackAI Prior Authorization (RCM) template:
-
-| StackAI agent | This pipeline | File |
+| Points extracted | This pipeline | File |
 |---|---|---|
 | Extract PA Request Info | `check_note_quality()` — Layer 1 | generate.py |
 | Generate PA Packet Checklist | `generate_pa_decision()` — Layer 2 | generate.py |
